@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: ReleaseIt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag_version: ${{ steps.get_tag_version.outputs.tag_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CI_WORKFLOW_TOKEN }}
+
+      - name: git config
+        run: |
+          git config user.name "crissdev"
+          git config user.email "criss.trifan@gmail.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - id: get_tag_version
+        run: echo "tag_version=$(npx release-it --ci --dry-run --release-version | tail -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        run: npx release-it --ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_WORKFLOW_TOKEN }}
